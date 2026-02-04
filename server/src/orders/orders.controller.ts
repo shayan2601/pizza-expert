@@ -1,26 +1,33 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, UseGuards, Req } from '@nestjs/common';
 import { OrdersService } from './orders.service';
-import { Order } from './schemas/order.schema';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
-  async create(@Body() order: Partial<Order>) {
-    return this.ordersService.create(order);
+  @UseGuards(JwtAuthGuard)
+  async create(@Body() orderData: any, @Req() req: any) {
+    return this.ordersService.create({
+      ...orderData,
+      userId: req.user.userId
+    });
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   async findAll() {
     return this.ordersService.findAll();
+  }
+
+  @Get('my-orders')
+  @UseGuards(JwtAuthGuard)
+  async findMyOrders(@Req() req: any) {
+    return this.ordersService.findByUserId(req.user.userId);
   }
 
   @Get(':id')
@@ -29,6 +36,8 @@ export class OrdersController {
   }
 
   @Patch(':id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   async updateStatus(@Param('id') id: string, @Body('status') status: string) {
     return this.ordersService.updateStatus(id, status);
   }

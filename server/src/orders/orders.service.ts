@@ -18,6 +18,10 @@ export class OrdersService {
     return this.orderModel.find().sort({ createdAt: -1 }).exec();
   }
 
+  async findByUserId(userId: string): Promise<Order[]> {
+    return this.orderModel.find({ userId }).sort({ createdAt: -1 }).exec();
+  }
+
   async findOne(id: string): Promise<Order> {
     const order = await this.orderModel.findById(id).exec();
     if (!order) {

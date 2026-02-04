@@ -2,7 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Trash2, Minus, Plus, ArrowLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trash2, Minus, Plus, ArrowLeft, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import Navbar from '@/components/Navbar';
 
@@ -11,13 +12,20 @@ export default function CartPage() {
 
   if (cart.length === 0) {
     return (
-      <main>
+      <main className="min-h-screen bg-white">
         <Navbar />
-        <div className="container" style={{ textAlign: 'center', padding: '100px 20px' }}>
-          <h2 style={{ fontSize: '2rem', marginBottom: '16px' }}>Your cart is empty</h2>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>Looks like you haven't added anything to your cart yet.</p>
-          <Link href="/" className="btn btn-primary">
-            Browse Menu
+        <div className="container mx-auto px-6 flex flex-col items-center justify-center py-40">
+          <motion.div 
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-32 h-32 bg-gray-50 rounded-full flex items-center justify-center mb-8"
+          >
+            <ShoppingBag size={48} className="text-gray-200" />
+          </motion.div>
+          <h2 className="text-4xl font-black font-heading tracking-tighter text-secondary mb-4 text-center">Your cart is feeling lonely</h2>
+          <p className="text-gray-400 text-lg mb-12 text-center max-w-md">Looks like you haven't added any of our delicious masterpieces to your cart yet.</p>
+          <Link href="/#menu" className="btn btn-primary px-8 py-4 text-lg">
+            Explore Menu
           </Link>
         </div>
       </main>
@@ -25,64 +33,100 @@ export default function CartPage() {
   }
 
   return (
-    <main>
+    <main className="min-h-screen bg-white">
       <Navbar />
-      <div className="container section-padding">
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontWeight: 600, marginBottom: '32px' }}>
-          <ArrowLeft size={20} /> Back to Menu
+      <div className="container mx-auto px-6 py-32">
+        <Link href="/" className="inline-flex items-center gap-2 text-primary font-black uppercase tracking-widest text-xs mb-12 hover:gap-4 transition-all">
+          <ArrowLeft size={16} /> Back to Menu
         </Link>
         
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '40px' }}>Shopping Cart</h1>
+        <h1 className="text-5xl md:text-6xl font-black font-heading tracking-tightest text-secondary mb-16">
+          Your <span className="italic text-primary">Basket</span>
+        </h1>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '40px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {cart.map((item) => (
-              <div key={`${item.productId}-${item.size}`} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '20px',
-                background: 'var(--surface)',
-                borderRadius: 'var(--radius-md)',
-                boxShadow: 'var(--shadow)'
-              }}>
-                <div>
-                  <h3 style={{ fontSize: '1.1rem' }}>{item.name}</h3>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Size: {item.size}</span>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'white', padding: '4px 12px', borderRadius: '30px' }}>
-                    <button onClick={() => updateQuantity(item.productId, item.size, item.quantity - 1)}><Minus size={16} /></button>
-                    <span style={{ fontWeight: 700, minWidth: '20px', textAlign: 'center' }}>{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.productId, item.size, item.quantity + 1)}><Plus size={16} /></button>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+          <div className="lg:col-span-8 flex flex-col gap-6">
+            <AnimatePresence mode='popLayout'>
+              {cart.map((item) => (
+                <motion.div 
+                  layout
+                  key={`${item.productId}-${item.size}`}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  className="bg-white p-6 rounded-premium border border-gray-100 shadow-sm hover:shadow-premium transition-all duration-300 flex flex-col sm:flex-row justify-between items-center gap-6"
+                >
+                  <div className="flex-1">
+                    <h3 className="text-xl font-black font-heading text-secondary">{item.name}</h3>
+                    <span className="text-xs font-black uppercase tracking-widest text-primary/60">Size: {item.size}</span>
                   </div>
-                  <span style={{ fontWeight: 800, minWidth: '80px', textAlign: 'right' }}>PKR {item.price * item.quantity}</span>
-                  <button onClick={() => removeFromCart(item.productId, item.size)} style={{ color: 'var(--primary)', padding: '8px' }}>
-                    <Trash2 size={20} />
-                  </button>
-                </div>
-              </div>
-            ))}
+
+                  <div className="flex items-center gap-12">
+                    <div className="flex items-center gap-4 bg-gray-50 p-2 rounded-2xl border border-gray-100">
+                      <motion.button 
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => updateQuantity(item.productId, item.size, item.quantity - 1)}
+                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-secondary hover:text-primary transition-colors"
+                      >
+                        <Minus size={18} />
+                      </motion.button>
+                      <span className="font-black text-lg min-w-[30px] text-center">{item.quantity}</span>
+                      <motion.button 
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => updateQuantity(item.productId, item.size, item.quantity + 1)}
+                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-secondary hover:text-primary transition-colors"
+                      >
+                        <Plus size={18} />
+                      </motion.button>
+                    </div>
+
+                    <div className="text-right min-w-[120px]">
+                      <span className="block text-[10px] text-gray-400 font-bold uppercase tracking-wider">Subtotal</span>
+                      <span className="text-xl font-black text-secondary tracking-tighter">PKR {item.price * item.quantity}</span>
+                    </div>
+
+                    <motion.button 
+                      whileHover={{ scale: 1.1, color: '#FF3131' }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => removeFromCart(item.productId, item.size)} 
+                      className="text-gray-300 transition-colors"
+                    >
+                      <Trash2 size={22} />
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
 
-          <div style={{ background: 'var(--secondary)', color: 'white', padding: '32px', borderRadius: 'var(--radius-lg)', height: 'fit-content' }}>
-            <h3 style={{ fontSize: '1.5rem', marginBottom: '24px' }}>Order Summary</h3>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', opacity: 0.8 }}>
-              <span>Subtotal</span>
-              <span>PKR {cartTotal}</span>
+          <div className="lg:col-span-4">
+            <div className="sticky top-32 bg-secondary rounded-premium p-10 text-white shadow-premium overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+              <h3 className="text-3xl font-black font-heading mb-10 tracking-tighter">Summary</h3>
+              
+              <div className="space-y-6 mb-10 font-bold text-gray-400">
+                <div className="flex justify-between items-center">
+                  <span className="uppercase tracking-widest text-xs">Subtotal</span>
+                  <span className="text-white">PKR {cartTotal}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="uppercase tracking-widest text-xs">Delivery Fees</span>
+                  <span className="text-green-400 uppercase tracking-widest text-[11px]">Free</span>
+                </div>
+              </div>
+
+              <div className="pt-8 border-t border-white/10 mb-12">
+                <div className="flex justify-between items-end">
+                  <span className="text-xs uppercase tracking-widest text-primary font-black">Total Amount</span>
+                  <span className="text-4xl font-black tracking-tightest">PKR {cartTotal}</span>
+                </div>
+              </div>
+
+              <Link href="/checkout" className="btn btn-primary w-full py-5 text-lg font-black shadow-glow group">
+                Proceed to Checkout
+                <ArrowLeft className="ml-2 rotate-180 group-hover:translate-x-2 transition-transform" />
+              </Link>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', opacity: 0.8 }}>
-              <span>Delivery</span>
-              <span>Free</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px', fontWeight: 800, fontSize: '1.25rem' }}>
-              <span>Total</span>
-              <span>PKR {cartTotal}</span>
-            </div>
-            <Link href="/checkout" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-              Proceed to Checkout
-            </Link>
           </div>
         </div>
       </div>

@@ -2,9 +2,11 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { motion } from 'framer-motion';
 import axios from 'axios';
 import Navbar from '@/components/Navbar';
-import { Clock, CheckCircle, Package, Truck, Search } from 'lucide-react';
+import { Clock, CheckCircle, Package, Truck, Search, MapPin, Phone, User, Loader2, ShoppingBag } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const API_URL = 'http://localhost:3001';
 
@@ -16,13 +18,14 @@ function OrderContent() {
   const [searchId, setSearchId] = useState('');
 
   const fetchOrder = async (id: string) => {
+    if (!id) return;
     setLoading(true);
     try {
       const response = await axios.get(`${API_URL}/orders/${id}`);
       setOrder(response.data);
     } catch (error) {
       console.error('Error fetching order:', error);
-      alert('Order not found');
+      alert('Order not found or invalid Order ID');
     } finally {
       setLoading(false);
     }
@@ -31,71 +34,169 @@ function OrderContent() {
   useEffect(() => {
     if (orderId) {
       fetchOrder(orderId);
+      setSearchId(orderId);
     }
   }, [orderId]);
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'pending': return <Clock size={40} color="var(--primary)" />;
-      case 'preparing': return <Package size={40} color="var(--accent)" />;
-      case 'delivered': return <CheckCircle size={40} color="#27ae60" />;
-      default: return <Truck size={40} color="var(--text-muted)" />;
-    }
+  const getStatusStep = (status: string) => {
+    const steps = ['pending', 'preparing', 'delivered'];
+    return steps.indexOf(status);
   };
 
   return (
-    <div className="container section-padding">
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '40px', textAlign: 'center' }}>Track Your Order</h1>
+    <div className="container mx-auto px-6 py-32">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-5xl md:text-6xl font-black font-heading tracking-tightest text-secondary mb-16 text-center">
+          Order <span className="italic text-primary">Live Status</span>
+        </h1>
         
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '60px' }}>
+        <div className="flex gap-4 mb-20">
           <input
-            style={{ flex: 1, padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid #ddd' }}
-            placeholder="Enter Order ID"
+            className="flex-1 bg-gray-50 border border-gray-100 p-6 rounded-2xl font-bold transition-all outline-none focus:border-primary focus:bg-white"
+            placeholder="Enter Your Unique Order ID"
             value={searchId}
             onChange={(e) => setSearchId(e.target.value)}
           />
-          <button onClick={() => fetchOrder(searchId)} className="btn btn-primary">
-            <Search size={20} /> Track
-          </button>
+          <motion.button 
+            whileTap={{ scale: 0.95 }}
+            onClick={() => fetchOrder(searchId)} 
+            className="btn btn-primary px-10 shadow-glow"
+            disabled={loading}
+          >
+            {loading ? <Loader2 className="animate-spin" /> : <Search size={22} />}
+          </motion.button>
         </div>
 
-        {loading && <p style={{ textAlign: 'center' }}>Loading order details...</p>}
+        {order ? (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-12"
+          >
+            {/* Status Visualizer */}
+            <div className="premium-card !p-12 relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-8">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary bg-primary/5 px-4 py-2 rounded-full border border-primary/10">
+                    Live Updates
+                  </span>
+               </div>
 
-        {order && (
-          <div className="fade-in" style={{ background: 'white', padding: '40px', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)' }}>
-            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-              <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
-                {getStatusIcon(order.status)}
-              </div>
-              <h2 style={{ fontSize: '1.75rem', textTransform: 'capitalize' }}>Status: {order.status}</h2>
-              <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Order ID: {order._id}</p>
+               <div className="flex justify-between items-center relative mb-12">
+                  <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-100 -z-10 -translate-y-1/2" />
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(getStatusStep(order.status) / 2) * 100}%` }}
+                    className="absolute top-1/2 left-0 h-1 bg-primary -z-10 -translate-y-1/2 transition-all duration-1000" 
+                  />
+                  
+                  {[
+                    { state: 'pending', icon: Clock, label: 'Received' },
+                    { state: 'preparing', icon: Package, label: 'Kitchen' },
+                    { state: 'delivered', icon: Truck, label: 'Delivered' }
+                  ].map((step, idx) => {
+                    const Icon = step.icon;
+                    const isActive = getStatusStep(order.status) >= idx;
+                    const isProcessing = order.status === step.state;
+
+                    return (
+                      <div key={idx} className="flex flex-col items-center gap-4">
+                        <motion.div 
+                          animate={isProcessing ? { scale: [1, 1.1, 1] } : {}}
+                          transition={{ repeat: Infinity, duration: 2 }}
+                          className={cn(
+                            "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500",
+                            isActive ? "bg-primary text-white shadow-lg shadow-primary/30" : "bg-white text-gray-300 border-2 border-gray-100"
+                          )}
+                        >
+                          <Icon size={28} />
+                        </motion.div>
+                        <span className={cn(
+                          "uppercase tracking-widest text-[10px] font-black",
+                          isActive ? "text-secondary" : "text-gray-300"
+                        )}>
+                          {step.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+               </div>
+
+               <div className="text-center">
+                  <h2 className="text-3xl font-black font-heading tracking-tighter mb-2">
+                    {order.status === 'pending' && "Hang tight! Request received."}
+                    {order.status === 'preparing' && "Chef is working their magic!"}
+                    {order.status === 'delivered' && "Hope you enjoyed the taste!"}
+                  </h2>
+                  <p className="text-gray-400 font-bold uppercase tracking-widest text-xs italic">Order ID: {order._id}</p>
+               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', borderTop: '1px solid #eee', paddingTop: '32px' }}>
-              <div>
-                <h3 style={{ marginBottom: '16px' }}>Order Items</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {order.items.map((item: any, i: number) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem' }}>
-                      <span>{item.quantity}x {item.name} ({item.size})</span>
-                      <span style={{ fontWeight: 600 }}>PKR {item.price * item.quantity}</span>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px dashed #ddd', display: 'flex', justifyContent: 'space-between', fontWeight: 800 }}>
-                  <span>Total Paid</span>
-                  <span>PKR {order.totalAmount}</span>
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
+              <div className="md:col-span-7">
+                <div className="premium-card !p-10 h-full">
+                  <h3 className="text-2xl font-black font-heading tracking-tighter mb-8">Items Ordered</h3>
+                  <div className="space-y-6">
+                    {order.items.map((item: any, i: number) => (
+                      <div key={i} className="flex justify-between items-center pb-4 border-b border-gray-50 last:border-0 last:pb-0">
+                        <div>
+                          <span className="block font-black text-secondary">{item.quantity}x {item.name}</span>
+                          <span className="text-[10px] uppercase font-black tracking-widest text-primary italic">{item.size}</span>
+                        </div>
+                        <span className="font-black text-lg tracking-tighter">PKR {item.price * item.quantity}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-10 pt-6 border-t border-gray-100 flex justify-between items-end">
+                    <span className="text-xs font-black uppercase tracking-widest text-gray-400">Total Paid</span>
+                    <span className="text-3xl font-black text-primary tracking-tightest">PKR {order.totalAmount}</span>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <h3 style={{ marginBottom: '16px' }}>Delivery Details</h3>
-                <p style={{ fontWeight: 600 }}>{order.customerName}</p>
-                <p style={{ color: 'var(--text-muted)' }}>{order.customerPhone}</p>
-                <p style={{ marginTop: '12px' }}>{order.customerAddress}</p>
+              <div className="md:col-span-5">
+                <div className="bg-secondary rounded-premium p-10 text-white h-full relative overflow-hidden">
+                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/2" />
+                   <h3 className="text-2xl font-black font-heading tracking-tighter mb-10 text-primary">Delivery Information</h3>
+                   
+                   <div className="space-y-10">
+                      <div className="flex gap-6 items-start">
+                         <div className="bg-white/5 p-3 rounded-xl text-primary border border-white/5">
+                            <User size={20} />
+                         </div>
+                         <div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 block mb-1">Customer</span>
+                            <span className="font-black tracking-tight">{order.customerName}</span>
+                         </div>
+                      </div>
+
+                      <div className="flex gap-6 items-start">
+                         <div className="bg-white/5 p-3 rounded-xl text-primary border border-white/5">
+                            <Phone size={20} />
+                         </div>
+                         <div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 block mb-1">Contact</span>
+                            <span className="font-black tracking-tight">{order.customerPhone}</span>
+                         </div>
+                      </div>
+
+                      <div className="flex gap-6 items-start">
+                         <div className="bg-white/5 p-3 rounded-xl text-primary border border-white/5">
+                            <MapPin size={20} />
+                         </div>
+                         <div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 block mb-1">Address</span>
+                            <span className="font-black tracking-tight leading-relaxed">{order.customerAddress}</span>
+                         </div>
+                      </div>
+                   </div>
+                </div>
               </div>
             </div>
+          </motion.div>
+        ) : !loading && (
+          <div className="text-center py-20 opacity-30">
+             <ShoppingBag size={80} className="mx-auto mb-6 text-gray-300" />
+             <p className="font-black uppercase tracking-[0.3em] text-xs">Enter ID to begin tracking</p>
           </div>
         )}
       </div>
@@ -105,9 +206,13 @@ function OrderContent() {
 
 export default function OrderTrackingPage() {
   return (
-    <main>
+    <main className="min-h-screen bg-white">
       <Navbar />
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="w-12 h-12 text-primary animate-spin" />
+        </div>
+      }>
         <OrderContent />
       </Suspense>
     </main>

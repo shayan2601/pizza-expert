@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, ShoppingBag } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, ShoppingBag, Flame, Info } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { cn } from '@/lib/utils';
 
 interface Variant {
   size: string;
@@ -17,71 +19,73 @@ interface Product {
   description?: string;
 }
 
-export default function MenuCard({ product }: { product: Product }) {
+const MenuCard = React.memo(({ product }: { product: Product }) => {
   const [selectedVariant, setSelectedVariant] = useState(product.variants[0]);
   const { addToCart } = useCart();
 
   return (
-    <div className="fade-in" style={{
-      background: 'white',
-      borderRadius: 'var(--radius-lg)',
-      padding: '24px',
-      boxShadow: 'var(--shadow)',
-      transition: 'all 0.3s ease',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '16px'
-    }}>
-      <div>
-        <span style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700, textTransform: 'uppercase' }}>
-          {product.category}
-        </span>
-        <h3 style={{ fontSize: '1.25rem', marginTop: '4px' }}>{product.name}</h3>
-        {product.description && <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '8px' }}>{product.description}</p>}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="premium-card group h-full flex flex-col justify-between"
+    >
+      <div className="relative">
+        <div className="flex justify-between items-start mb-4">
+          <span className="px-3 py-1 rounded-full bg-primary/5 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/10">
+            {product.category}
+          </span>
+          {product.category.toLowerCase().includes('pizza') && (
+            <Flame size={16} className="text-primary" />
+          )}
+        </div>
+
+        <h3 className="text-xl font-black font-heading text-secondary group-hover:text-primary transition-colors duration-300 mb-2">
+          {product.name}
+        </h3>
+        <p className="text-gray-400 text-sm line-clamp-2 min-h-[40px] mb-6">
+          {product.description || "Expertly prepared using our secret recipe and freshest local ingredients for maximum flavor."}
+        </p>
       </div>
 
-      <div style={{ marginTop: 'auto' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+      <div>
+        <div className="flex flex-wrap gap-2 mb-6">
           {product.variants.map((v) => (
             <button
               key={v.size}
               onClick={() => setSelectedVariant(v)}
-              style={{
-                padding: '4px 12px',
-                borderRadius: '20px',
-                fontSize: '0.75rem',
-                border: selectedVariant.size === v.size ? '2px solid var(--primary)' : '2px solid var(--surface)',
-                background: selectedVariant.size === v.size ? 'var(--primary)' : 'white',
-                color: selectedVariant.size === v.size ? 'white' : 'var(--text)',
-                fontWeight: 600
-              }}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-300 border",
+                selectedVariant.size === v.size
+                  ? "bg-primary border-primary text-white shadow-lg shadow-primary/20"
+                  : "bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-300"
+              )}
             >
               {v.size}
             </button>
           ))}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <span style={{ fontSize: '0.75rem', display: 'block', color: 'var(--text-muted)' }}>Price</span>
-            <span style={{ fontSize: '1.25rem', fontWeight: 800 }}>PKR {selectedVariant.price}</span>
+        <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+          <div className="flex flex-col">
+            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Price</span>
+            <span className="text-2xl font-black text-secondary tracking-tighter">
+              <span className="text-sm font-medium text-gray-400 mr-1">PKR</span>
+              {selectedVariant.price}
+            </span>
           </div>
-          <button
+          
+          <motion.button
+            whileTap={{ scale: 0.9 }}
             onClick={() => addToCart(product, selectedVariant.size, selectedVariant.price)}
-            className="btn btn-primary"
-            style={{ padding: '8px 16px' }}
+            className="btn-primary w-12 h-12 !rounded-full !p-0 flex items-center justify-center group/btn shadow-glow"
           >
-            <Plus size={20} /> Add
-          </button>
+            <Plus size={24} className="group-hover/btn:rotate-90 transition-transform duration-300" />
+          </motion.button>
         </div>
       </div>
-
-      <style jsx>{`
-        div:hover {
-          transform: translateY(-5px);
-          box-shadow: var(--shadow-lg);
-        }
-      `}</style>
-    </div>
+    </motion.div>
   );
-}
+});
+
+export default MenuCard;

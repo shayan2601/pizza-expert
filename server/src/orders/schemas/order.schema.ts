@@ -29,6 +29,9 @@ export class Order {
   @Prop({ required: true })
   totalAmount: number;
 
+  @Prop({ type: String, ref: 'User', required: false })
+  userId: string;
+
   @Prop({ required: true })
   customerName: string;
 
@@ -39,10 +42,13 @@ export class Order {
   customerAddress: string;
 
   @Prop({ default: 'pending' })
-  status: string; // pending, preparing, delivered, cancelled
+  status: 'pending' | 'preparing' | 'delivered';
+
+  @Prop({ default: 'cash' })
+  paymentMethod: 'cash' | 'card';
 
   @Prop({ default: 'pending' })
-  paymentStatus: string; // pending, paid
+  paymentStatus: 'pending' | 'paid';
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
